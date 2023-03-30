@@ -5,7 +5,7 @@ cd /workspace/ColossalAI/applications/Chat/examples
 python downloader.py
 
 # torchrun --standalone --nproc_per_node=4 train_sft.py \
-torchrun --standalone --nproc_per_node=4 train_sft.py \
+python -m torch.distributed.launch --nproc_per_node=4 --nnode=1 train_sft.py \
     --pretrain "model_llama_7b" \
     --model 'llama' \
     --strategy colossalai_zero2 \
