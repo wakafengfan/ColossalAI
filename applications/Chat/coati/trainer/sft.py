@@ -70,7 +70,7 @@ class SFTTrainer(ABC):
                                        num_training_steps=max_steps)
 
     def fit(self, logger, log_interval=10):
-        wandb.init(project="Coati", name=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        wandb.init(project="waka-colossal", name=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
         wandb.watch(self.model)
         total_loss = 0
         # epoch_bar = tqdm(range(self.epochs), desc='Epochs', disable=not is_rank_0())
