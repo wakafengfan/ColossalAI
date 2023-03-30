@@ -1,0 +1,5 @@
+[default]
+entity = waka
+project = waka-colossal
+base_url = https://api.wandb.ai
+
