@@ -164,7 +164,7 @@ def download_alpaca(data_file):
     data_file = Path(data_file).name
     os.makedirs('model_llama_7b', exist_ok=True)
     os.makedirs('dataset', exist_ok=True)
-    data_transfer(file_names=model_alpaca_list, local_dir="model_llama_7b", remote_dir="model_llama_7b", trans_type="download")
+    data_transfer(file_names=model_list, local_dir="model_llama_7b", remote_dir="model_llama_7b", trans_type="download")
     data_transfer(file_names=[data_file], local_dir="dataset", remote_dir="data_llama_7b", trans_type="download")
 
 if __name__ == "__main__":
