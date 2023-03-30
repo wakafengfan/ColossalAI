@@ -1,9 +1,11 @@
 import argparse
 import os
+import sys
 
 import loralib as lora
 import torch
 import torch.distributed as dist
+sys.path.append('..')
 from coati.dataset import DataCollatorForSupervisedDataset, SFTDataset, SupervisedDataset
 from coati.models.base import RewardModel
 from coati.models.bloom import BLOOMLM
@@ -165,6 +167,7 @@ def train(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--local_rank', type=int, default=0)
     parser.add_argument('--strategy',
                         choices=['naive', 'ddp', 'colossalai_gemini', 'colossalai_zero2'],
                         default='naive')
