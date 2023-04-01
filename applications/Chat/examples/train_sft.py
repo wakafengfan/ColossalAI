@@ -19,12 +19,34 @@ from datasets import load_dataset
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
+from torch.utils.tensorboard import SummaryWriter
 from transformers import AutoTokenizer, BloomTokenizerFast
 from transformers.models.gpt2.tokenization_gpt2 import GPT2Tokenizer
 
 from colossalai.logging import get_dist_logger
 from colossalai.nn.optimizer import HybridAdam
 from colossalai.tensor import ColoParameter
+
+
+def preprocess_test_text(tokenizer):
+    output = []
+    for text in [
+        "小明的爸爸有三个孩子，老大叫王一，老二叫王二，老三叫什么？",
+        "怎么让自己精力充沛，列5点建议",
+        "给定一个事件的历史时间线，并询问事件的发生顺序。 事件：第一次世界大战 时间线： - 1914年6月28日：萨拉热窝事件 - 1914年7月28日：奥匈帝国向塞尔维亚宣战 - 1914年8月4日：英国加入战争 - 1915年4月25日：盟军进攻土耳其加里波利半岛",
+        "写一首描写冬天的诗歌",
+        "重义轻利的反义词是不是小意大利？",
+        "香蕉的平方根是多少",
+        "1955 年谁是美国总统？他是什么党派？"
+        
+    ]:
+        tokenized_text = tokenizer(text, return_tensors="pt", max_length=tokenizer.model_max_length, truncation=True,)
+        input_ids = tokenized_text.input_ids
+        attention_mask = tokenized_text.attention_mask
+
+        output.append([input_ids, attention_mask])
+    
+    return output
 
 
 def train(args):
@@ -144,6 +166,8 @@ def train(args):
                                      pin_memory=True)
     else:
         eval_dataloader = None
+    
+    tensorboard_writer = SummaryWriter(args.summary_dir)
 
     trainer = SFTTrainer(model=model,
                          strategy=strategy,
@@ -153,8 +177,9 @@ def train(args):
                          batch_size=args.batch_size,
                          max_epochs=args.max_epochs,
                          accimulation_steps=args.accimulation_steps)
-
-    trainer.fit(logger=logger, log_interval=args.log_interval)
+    
+    test_inputs = preprocess_test_text(tokenizer)
+    trainer.fit(logger=logger, log_interval=args.log_interval, tensorboard_writer=tensorboard_writer, test_inputs=test_inputs)
 
     # save model checkpoint after fitting on only rank0
     trainer.save_model(path=args.save_path, only_rank0=True, tokenizer=tokenizer)
@@ -183,5 +208,11 @@ if __name__ == '__main__':
     parser.add_argument('--log_interval', type=int, default=100, help="how many steps to log")
     parser.add_argument('--lr', type=float, default=5e-6)
     parser.add_argument('--accimulation_steps', type=int, default=8)
+    # for bvac
+    parser.add_argument('--d_train_dir', type=str, required=False, help='bvac train dir')
+    parser.add_argument('--d_pre_model_dir', type=str, required=False, help='bvac pre_model_dir')
+    parser.add_argument('--d_model_dir', type=str, required=False, default='/model_dir', help='bvac model_dir')
+    parser.add_argument('--d_summary_dir', type=str, required=False, default='/summary_dir', help='bvac summary_dir')
+    parser.add_argument('--d_result_dir', type=str, required=False, help='bvac result_dir')
     args = parser.parse_args()
     train(args)

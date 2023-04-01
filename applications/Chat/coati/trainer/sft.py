@@ -6,7 +6,6 @@ from typing import Optional
 import loralib as lora
 import torch
 import torch.distributed as dist
-import wandb
 from coati.models.loss import GPTLMLoss
 from torch import nn
 from torch.optim import Adam, Optimizer
@@ -50,6 +49,8 @@ class SFTTrainer(ABC):
         accimulation_steps: int = 8,
     ) -> None:
         super().__init__()
+        
+
         self.strategy = strategy
         self.epochs = max_epochs
         self.train_dataloader = train_dataloader
@@ -69,9 +70,9 @@ class SFTTrainer(ABC):
                                        num_warmup_steps=math.ceil(max_steps * 0.03),
                                        num_training_steps=max_steps)
 
-    def fit(self, logger, log_interval=10):
-        wandb.init(project="waka-colossal", name=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-        wandb.watch(self.model)
+    def fit(self, logger, log_interval=10, tensorboard_writer=None, test_inputs=None, tokenizer=None):
+        # wandb.init(project="waka-colossal", name=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        # wandb.watch(self.model)
         total_loss = 0
         # epoch_bar = tqdm(range(self.epochs), desc='Epochs', disable=not is_rank_0())
         step_bar = tqdm(range(len(self.train_dataloader) // self.accimulation_steps * self.epochs),
@@ -110,14 +111,35 @@ class SFTTrainer(ABC):
                     self.strategy.optimizer_step(self.optimizer)
                     self.optimizer.zero_grad()
                     self.scheduler.step()
-                    wandb.log({
-                        "loss": total_loss / self.accimulation_steps,
-                        "lr": self.scheduler.get_last_lr()[0],
-                        "epoch": epoch,
-                        "batch_id": batch_id
-                    })
+                
+                    if dist.get_rank() == 0 and(batch_id + 1) % (self.accimulation_steps*10):
+                        self.tensorboard_writer.add_scalar('loss/train', total_loss / self.accimulation_steps, batch_id)
+                        # wandb.log({
+                        print({
+                            "loss": total_loss / self.accimulation_steps,
+                            "lr": self.scheduler.get_last_lr()[0],
+                            "epoch": epoch,
+                            "batch_id": batch_id
+                        })
                     total_loss = 0
                     step_bar.update()
+                
+                if dist.get_rank() == 0 and batch_id % 1000 == 0:
+                    self.model.eval()
+                    o_t_list = []
+                    for t in self.test_text:
+                        with torch.no_grad():
+                            t = t[0].to(torch.cuda.current_device())
+                            o_t = self.model.module.generate(t,
+                                                            max_new_tokens=512,
+                                                            eos_token_id=tokenizer.eos_token_id,
+                                                            num_beams = 1,
+                                                            return_dict_in_generate=True)
+                            o_t = self.tokenizer.decode(o_t.sequences[0])
+                            o_t_list.append(o_t)
+                    o = '\n\n'.join(o_t_list)
+                    self.tensorboard_writer.add_text('output/text', o, batch_id)
+                    self.model.train()
 
                 # if batch_id % log_interval == 0:
                 # logger.info(f'Train Epoch {epoch}/{self.epochs} Batch {batch_id} Rank {dist.get_rank()} loss {loss.item()}')
