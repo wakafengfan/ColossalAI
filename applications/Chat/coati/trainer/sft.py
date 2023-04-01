@@ -112,8 +112,8 @@ class SFTTrainer(ABC):
                     self.optimizer.zero_grad()
                     self.scheduler.step()
                 
-                    if dist.get_rank() == 0 and(batch_id + 1) % (self.accimulation_steps*10):
-                        self.tensorboard_writer.add_scalar('loss/train', total_loss / self.accimulation_steps, batch_id)
+                    if dist.get_rank() == 0:
+                        tensorboard_writer.add_scalar('loss/train', total_loss / self.accimulation_steps, batch_id)
                         # wandb.log({
                         print({
                             "loss": total_loss / self.accimulation_steps,
@@ -127,7 +127,7 @@ class SFTTrainer(ABC):
                 if dist.get_rank() == 0 and batch_id % 1000 == 0:
                     self.model.eval()
                     o_t_list = []
-                    for t in self.test_text:
+                    for t in test_inputs:
                         with torch.no_grad():
                             t = t[0].to(torch.cuda.current_device())
                             o_t = self.model.module.generate(t,
