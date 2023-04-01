@@ -167,7 +167,7 @@ def train(args):
     else:
         eval_dataloader = None
     
-    tensorboard_writer = SummaryWriter(args.summary_dir)
+    tensorboard_writer = SummaryWriter(args.d_summary_dir)
 
     trainer = SFTTrainer(model=model,
                          strategy=strategy,
