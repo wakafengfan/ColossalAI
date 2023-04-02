@@ -134,12 +134,14 @@ class SFTTrainer(ABC):
                                 o_t = self.model.module.generate(t,
                                                                 max_length=512,
                                                                 eos_token_id=tokenizer.eos_token_id,
+                                                                pad_token_id=tokenizer.pad_token_id,
                                                                 num_beams=1,
                                                                 return_dict_in_generate=True)
                             else:
                                 o_t = self.model.generate(t,
                                                                 max_length=512,
                                                                 eos_token_id=tokenizer.eos_token_id,
+                                                                pad_token_id=tokenizer.pad_token_id,
                                                                 num_beams=1,
                                                                 return_dict_in_generate=True)
                             o_t = self.tokenizer.decode(o_t.sequences[0])
