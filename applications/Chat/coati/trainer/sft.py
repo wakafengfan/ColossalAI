@@ -132,19 +132,19 @@ class SFTTrainer(ABC):
                             t = t[0].to(torch.cuda.current_device())
                             if hasattr(self.model, "module"):
                                 o_t = self.model.module.generate(t,
-                                                                max_new_tokens=512,
+                                                                max_length=512,
                                                                 eos_token_id=tokenizer.eos_token_id,
-                                                                num_beams = 1,
+                                                                num_beams=1,
                                                                 return_dict_in_generate=True)
                             else:
                                 o_t = self.model.generate(t,
-                                                                max_new_tokens=512,
+                                                                max_length=512,
                                                                 eos_token_id=tokenizer.eos_token_id,
-                                                                num_beams = 1,
+                                                                num_beams=1,
                                                                 return_dict_in_generate=True)
                             o_t = self.tokenizer.decode(o_t.sequences[0])
                             o_t_list.append(o_t)
-                            
+
                     o = '\n\n'.join(o_t_list)
                     self.tensorboard_writer.add_text('output/text', o, batch_id)
                     self.model.train()
