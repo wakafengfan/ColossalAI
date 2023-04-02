@@ -179,7 +179,8 @@ def train(args):
                          accimulation_steps=args.accimulation_steps)
     
     test_inputs = preprocess_test_text(tokenizer)
-    trainer.fit(logger=logger, log_interval=args.log_interval, tensorboard_writer=tensorboard_writer, test_inputs=test_inputs)
+    trainer.fit(logger=logger, log_interval=args.log_interval, tensorboard_writer=tensorboard_writer, test_inputs=test_inputs,
+                tokenizer=tokenizer)
 
     # save model checkpoint after fitting on only rank0
     trainer.save_model(path=args.save_path, only_rank0=True, tokenizer=tokenizer)
