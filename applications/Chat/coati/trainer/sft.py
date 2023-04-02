@@ -144,7 +144,8 @@ class SFTTrainer(ABC):
                                                                 pad_token_id=tokenizer.pad_token_id,
                                                                 num_beams=1,
                                                                 return_dict_in_generate=True)
-                            o_t = tokenizer.decode(o_t.sequences[0])
+                                print(o_t)
+                            o_t = tokenizer.decode(o_t[0].sequences[0])
                             o_t_list.append(o_t)
 
                     o = '\n\n'.join(o_t_list)
