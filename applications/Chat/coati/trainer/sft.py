@@ -148,7 +148,7 @@ class SFTTrainer(ABC):
                             o_t_list.append(o_t)
 
                     o = '\n\n'.join(o_t_list)
-                    self.tensorboard_writer.add_text('output/text', o, batch_id)
+                    tensorboard_writer.add_text('output/text', o, batch_id)
                     self.model.train()
 
                 # if batch_id % log_interval == 0:
